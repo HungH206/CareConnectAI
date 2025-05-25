@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Heart, Settings, User } from "lucide-react"
+import { Bell, Settings, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function DashboardHeader() {
@@ -8,12 +8,8 @@ export default function DashboardHeader() {
     <header className="sticky top-0 z-40 border-b bg-white">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Heart className="h-6 w-6 text-teal-500" />
-            <span className="text-xl font-bold">CareConnect</span>
-          </div>
           <div className="flex items-center gap-2 text-gray-600">
-            <span className="text-sm">Dashboard</span>
+            <span className="text-xl font-bold">Dashboard</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
