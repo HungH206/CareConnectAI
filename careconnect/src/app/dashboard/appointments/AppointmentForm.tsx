@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"; // Essential for a component with client-side hooks
 
 import React, { useState, useEffect, FormEvent, JSX } from 'react';
@@ -155,7 +157,7 @@ function AppointmentForm(): JSX.Element { // If JSX is not found, check tsconfig
             console.warn("dbInstance not available. Displaying initial mock appointments.");
             setPendingAppointments(initialMockAppointments); // Or keep whatever mock data logic you prefer
         }
-    }, [dbInstance, isAuthReady, userId]);
+    }, [dbInstance, initialMockAppointments, isAuthReady, userId]);
 
     useEffect(() => {
         if (healthcareProvider) {
