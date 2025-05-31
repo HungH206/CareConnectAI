@@ -1,25 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client"; // Essential for a component with client-side hooks
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
 import React, { useState, useEffect, FormEvent, JSX } from 'react';
+import { 
+  Heart, 
+  BarChart3, 
+  Activity, 
+  Calendar, 
+  FileText, 
+  MessageSquare, 
+  Users, 
+  Settings, 
+  HelpCircle, 
+  LogOut,
+  Bell,
+  Menu,
+  User,
+  Clock
+} from 'lucide-react';
 
-// Firebase SDK functions
-import {
-    collection, addDoc, doc, deleteDoc, onSnapshot, query,
-    // Firestore, Query, QuerySnapshot, DocumentData, CollectionReference, DocumentReference // Optional for stricter types
-} from 'firebase/firestore';
-import {
-    // Auth, User, // Optional for stricter types
-    signInAnonymously, onAuthStateChanged, signInWithCustomToken,
-} from 'firebase/auth';
-// These are now expected to be imported if NOT using the global __firebase_config approach
-// For a typical Next.js app, you'd have a central Firebase initialization file.
-// Let's assume the user will create 'src/lib/firebaseConfig.ts' as previously guided.
-import { db as firebaseDb, auth as firebaseAuth, app as firebaseApp, firebaseConfigAvailable } from '../../../lib/firebaseConfig'; // Adjust path as needed
-// Note: firebaseConfig.ts needs to export 'firebaseConfigAvailable' (boolean)
-
-// --- Type Definitions ---
+// Type Definitions
 interface Message {
   type: 'success' | 'error' | '';
   text: string;
@@ -33,14 +34,14 @@ interface Appointment {
   priority: number;
   appointmentType: string;
   appointmentTypeName?: string;
-  doctorId: string; // Made sure this is handled
+  doctorId: string;
   doctorName: string;
   preferredDate: string;
   timeSlot: string;
   status: string;
   requestedAt: string;
   userId: string | null;
-  appId: string; // This can be a constant or from env variables
+  appId: string;
 }
 
 interface MockDoctor {
@@ -55,10 +56,8 @@ interface SelectOption {
   label: string;
 }
 
-// App ID - recommend using an environment variable or a constant
-const appId: string = process.env.NEXT_PUBLIC_APP_ID || 'careconnect-ai-app';
+const appId: string = 'careconnect-ai-app';
 
-// Mock Data (ensure 'doctorId' is included)
 const mockAppointmentTypes: SelectOption[] = [
     { value: 'regular_checkup', label: 'Regular Check-up' },
     { value: 'follow_up', label: 'Follow-up' },
@@ -66,313 +65,418 @@ const mockAppointmentTypes: SelectOption[] = [
 ];
 
 const mockDoctors: MockDoctor[] = [
-    { id: 'doc1', name: 'Dr. John Doe (Cardiology)', specialty: 'Cardiology', availableSlots: ['09:00', '10:00'] },
-    { id: 'doc_smith_figma', name: 'Dr. Smith (Primary Care)', specialty: 'Primary Care', availableSlots: ['09:00', '11:00']},
+    { id: 'doc_smith_figma', name: 'Dr. Smith (Primary Care)', specialty: 'Primary Care', availableSlots: ['09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '02:00 PM', '02:30 PM', '03:00 PM'] },
+    { id: 'doc1', name: 'Dr. Evelyn Reed (Cardiology)', specialty: 'Cardiology', availableSlots: ['09:00 AM', '10:00 AM', '02:00 PM'] },
+    { id: 'doc2', name: 'Dr. Marcus Chen (Nutritionist)', specialty: 'Nutritionist', availableSlots: ['08:30 AM', '09:30 AM', '03:00 PM'] },
 ];
 
 const priorityLevels: SelectOption[] = [
-    { value: 1, label: 'Urgent' }, { value: 3, label: 'Medium' },
+    { value: 1, label: 'Urgent' }, 
+    { value: 2, label: 'High' },
+    { value: 3, label: 'Medium' }, 
+    { value: 4, label: 'Low (Routine)' },
 ];
 
-function AppointmentForm(): JSX.Element { // If JSX is not found, check tsconfig.json and @types/react
-    const [patientName, setPatientName] = useState<string>('Test User');
-    const [patientAge, setPatientAge] = useState<string>('30');
-    const [symptoms, setSymptoms] = useState<string>('Routine check');
+const sidebarItems = [
+  { icon: BarChart3, label: 'Dashboard', active: true },
+  { icon: Activity, label: 'Health Metrics' },
+  { icon: Activity, label: 'Activity' },
+  { icon: Calendar, label: 'Appointments' },
+  { icon: FileText, label: 'Reports' },
+  { icon: MessageSquare, label: 'Messages' },
+  { icon: Users, label: 'Care Team' },
+  { icon: Settings, label: 'Settings' },
+  { icon: HelpCircle, label: 'Help & Support' },
+];
+
+function CareConnectDashboard(): JSX.Element {
+    const [patientName, setPatientName] = useState<string>('Test Patient');
+    const [patientAge, setPatientAge] = useState<string>('35');
+    const [symptoms, setSymptoms] = useState<string>('Annual health screening');
     const [priority, setPriority] = useState<number>(3);
+    
     const [appointmentType, setAppointmentType] = useState<string>('regular_checkup');
-    const [healthcareProvider, setHealthcareProvider] = useState<string>('');
+    const [healthcareProvider, setHealthcareProvider] = useState<string>(mockDoctors[0].id);
     const [preferredDate, setPreferredDate] = useState<string>('');
     const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
-    const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+    const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(mockDoctors[0].availableSlots);
+
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [message, setMessage] = useState<Message>({ type: '', text: '' });
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
-
-    // Use imported db and auth instances, or fall back to simple mocks if not available
-    const dbInstance = firebaseConfigAvailable ? firebaseDb : null;
-    const authInstance = firebaseConfigAvailable ? firebaseAuth : null;
+    const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
     const initialMockAppointments: Appointment[] = [
-        { id: 'appt1_mock', doctorId: 'doc_smith_figma', doctorName: 'Dr. Smith', patientName: 'Follow-up User', patientAge: 45, symptoms: 'Follow-up', priority: 3, appointmentType: 'follow_up', appointmentTypeName: 'Follow-up', preferredDate: '2025-05-22', timeSlot: '10:00 AM', status: 'confirmed', requestedAt: new Date(2025,4,20).toISOString(), userId: 'mock_user_123', appId },
-        { id: 'appt2_mock', doctorId: 'doc1', doctorName: 'Dr. John Doe', patientName: 'Consult User', patientAge: 30, symptoms: 'Consultation', priority: 1, appointmentType: 'specialist_consultation', appointmentTypeName: 'Specialist Consultation', preferredDate: '2025-05-25', timeSlot: '02:30 PM', status: 'confirmed', requestedAt: new Date(2025,4,21).toISOString(), userId: 'mock_user_123', appId },
+        { 
+          id: 'figma_appt1', 
+          doctorId: 'doc_smith_figma', 
+          doctorName: 'Dr. Smith - Follow-up', 
+          patientName: 'User 1', 
+          patientAge: 40, 
+          symptoms: 'Follow-up discussion', 
+          priority: 3, 
+          appointmentType: 'follow_up', 
+          appointmentTypeName: 'Follow-up', 
+          preferredDate: '2025-05-22', 
+          timeSlot: '10:00 AM', 
+          status: 'Confirmed', 
+          requestedAt: new Date('2025-05-20T10:00:00Z').toISOString(), 
+          userId: 'mock_user_figma1', 
+          appId 
+        },
+        { 
+          id: 'figma_appt2', 
+          doctorId: 'doc2', 
+          doctorName: 'Nutritionist Consultation', 
+          patientName: 'User 2', 
+          patientAge: 32, 
+          symptoms: 'Diet plan review', 
+          priority: 3, 
+          appointmentType: 'specialist_consultation', 
+          appointmentTypeName: 'Nutritionist Consultation', 
+          preferredDate: '2025-05-25', 
+          timeSlot: '2:30 PM', 
+          status: 'Confirmed', 
+          requestedAt: new Date('2025-05-21T14:00:00Z').toISOString(), 
+          userId: 'mock_user_figma2', 
+          appId 
+        },
     ];
+    
     const [pendingAppointments, setPendingAppointments] = useState<Appointment[]>(initialMockAppointments);
 
+    useEffect(() => {
+        setTimeout(() => { 
+          setUserId('mock_user_123'); 
+          setIsAuthReady(true); 
+        }, 100);
+    }, []);
 
     useEffect(() => {
-        if (firebaseConfigAvailable && authInstance) {
-            console.log("Firebase config is available. Setting up auth listener.");
-            const unsubscribe = onAuthStateChanged(authInstance, async (user: any /* Firebase User */) => {
-                if (user) {
-                    setUserId(user.uid);
-                    console.log("User is signed in with UID:", user.uid);
-                } else {
-                    setUserId(null);
-                    console.log("User is signed out. Attempting anonymous sign-in.");
-                    // Simplified: always try anonymous if no user. Remove custom token logic unless specifically needed and configured.
-                    try {
-                        await signInAnonymously(authInstance);
-                    } catch (error) {
-                        console.error("Error during anonymous sign-in attempt:", error);
-                        setMessage({ type: 'error', text: 'User authentication error.' });
-                    }
-                }
-                setIsAuthReady(true);
-            });
-            return () => unsubscribe();
-        } else {
-            console.warn("Firebase config not available or auth instance missing. Using mock auth flow.");
-            // Simulate mock auth flow
-            setTimeout(() => {
-                setUserId('mock_user_123'); // Simulate mock user
-                setIsAuthReady(true);
-            }, 100);
-        }
-    }, [authInstance]); // Depend on authInstance
-
-    useEffect(() => {
-        if (!isAuthReady || !userId) return;
-
-        if (dbInstance) { // Check if dbInstance (real Firebase db) is available
-            console.log("Setting up Firestore onSnapshot listener.");
-            const appointmentsCollectionPath = `artifacts/${appId}/public/data/pendingAppointmentsGlobal`;
-            const appointmentsQuery = query(collection(dbInstance, appointmentsCollectionPath));
-            
-            const unsubscribe = onSnapshot(appointmentsQuery, (querySnapshot: any) => {
-                const fetchedAppointments: Appointment[] = [];
-                querySnapshot.forEach((docSnapshot: any) => {
-                    if (typeof docSnapshot.data === 'function') {
-                        fetchedAppointments.push({ id: docSnapshot.id, ...(docSnapshot.data() as Omit<Appointment, 'id'>) });
-                    }
-                });
-                fetchedAppointments.sort((a, b) => new Date(`${a.preferredDate}T${a.timeSlot || '00:00'}`).getTime() - new Date(`${b.preferredDate}T${b.timeSlot || '00:00'}`).getTime());
-                setPendingAppointments(fetchedAppointments);
-            }, (error: Error) => {
-                console.error("Error fetching appointments from Firestore: ", error);
-                setMessage({ type: 'error', text: 'Could not load appointment list.' });
-            });
-            return () => unsubscribe();
-        } else {
-            console.warn("dbInstance not available. Displaying initial mock appointments.");
-            setPendingAppointments(initialMockAppointments); // Or keep whatever mock data logic you prefer
-        }
-    }, [dbInstance, initialMockAppointments, isAuthReady, userId]);
-
-    useEffect(() => {
-        if (healthcareProvider) {
-            const doctor = mockDoctors.find(doc => doc.id === healthcareProvider);
-            setAvailableTimeSlots(doctor ? doctor.availableSlots : []);
-            setSelectedTimeSlot('');
-        } else {
-            setAvailableTimeSlots([]);
-        }
+        const doctor = mockDoctors.find(doc => doc.id === healthcareProvider);
+        setAvailableTimeSlots(doctor ? doctor.availableSlots : []);
+        setSelectedTimeSlot('');
     }, [healthcareProvider]);
 
-    const handleCancelAppointment = async (appointmentIdFromUI: string | undefined): Promise<void> => {
-        if (!appointmentIdFromUI) {
-            setMessage({ type: 'error', text: 'Invalid appointment ID for cancellation.' });
-            return;
-        }
-        if (!dbInstance || !userId) {
-            setMessage({ type: 'error', text: 'Cannot cancel: Data service not ready or user not authenticated.' });
-            // Mock cancel if dbInstance is not real
-            if (!dbInstance) {
-                 setPendingAppointments(prev => prev.filter(appt => appt.id !== appointmentIdFromUI));
-                 setMessage({ type: 'success', text: `Mock appointment ${appointmentIdFromUI} cancelled.` });
-            }
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const appointmentRef = doc(dbInstance, `artifacts/${appId}/public/data/pendingAppointmentsGlobal`, appointmentIdFromUI);
-            await deleteDoc(appointmentRef);
-            setMessage({ type: 'success', text: `Appointment ${appointmentIdFromUI} cancelled.` });
-        } catch (error) {
-            console.error("Error cancelling appointment:", error);
-            setMessage({ type: 'error', text: 'Error cancelling appointment.' });
-        }
-        setIsLoading(false);
+    const handleCancelAppointment = async (idToCancel: string | undefined): Promise<void> => {
+        if (!idToCancel) return;
+        setPendingAppointments(prev => prev.filter(appt => appt.id !== idToCancel));
+        setMessage({ type: 'success', text: `Appointment cancelled successfully.` });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     };
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+    const handleSubmit = (e: FormEvent<HTMLDivElement>): void => {
         e.preventDefault();
-        if (!isAuthReady || !userId) {
-            setMessage({ type: 'error', text: 'User not authenticated. Please wait.' });
-            return;
-        }
         if (!healthcareProvider || !selectedTimeSlot || !preferredDate || !appointmentType) {
-            setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+            setMessage({ type: 'error', text: 'Please complete all required fields.' }); 
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
             return;
         }
+        
         setIsLoading(true);
-        setMessage({ type: '', text: '' });
-
-        const newAppointmentData: Appointment = {
-            // id will be generated by Firestore or mock logic
-            patientName,
-            patientAge: parseInt(patientAge, 10) || 0,
-            symptoms,
+        
+        const selectedDoc = mockDoctors.find(d => d.id === healthcareProvider);
+        const mockId = `mock_id_${Date.now()}`;
+        
+        const apptData: Appointment = {
+            id: mockId,
+            patientName, 
+            patientAge: parseInt(patientAge, 10) || 0, 
+            symptoms, 
             priority,
-            appointmentType,
-            appointmentTypeName: mockAppointmentTypes.find(t => t.value === appointmentType)?.label || appointmentType,
-            doctorId: healthcareProvider, // Ensure this is assigned
-            doctorName: mockDoctors.find(d => d.id === healthcareProvider)?.name || 'N/A',
-            preferredDate,
-            timeSlot: selectedTimeSlot,
-            status: 'pending_confirmation',
-            requestedAt: new Date().toISOString(),
-            userId: userId,
-            appId: appId,
+            appointmentType, 
+            appointmentTypeName: mockAppointmentTypes.find(t => t.value === appointmentType)?.label || 'N/A',
+            doctorId: healthcareProvider, 
+            doctorName: selectedDoc?.name || 'Unknown Doctor',
+            preferredDate, 
+            timeSlot: selectedTimeSlot, 
+            status: 'Confirmed',
+            requestedAt: new Date().toISOString(), 
+            userId, 
+            appId,
         };
 
-        try {
-            if (dbInstance) { // Real Firebase DB
-                const appointmentsCollectionRef = collection(dbInstance, `artifacts/${appId}/public/data/pendingAppointmentsGlobal`);
-                const docRef = await addDoc(appointmentsCollectionRef, newAppointmentData);
-                setMessage({ type: 'success', text: `Appointment request sent (ID: ${docRef.id}).` });
-                setAppointmentType('regular_checkup');
-                setHealthcareProvider('');
-                setPreferredDate('');
-                setSelectedTimeSlot('');
-            } else { // Mock logic
-                console.log("Mock submission:", newAppointmentData);
-                const mockId = `mock_id_${Date.now()}`;
-                const newMockAppointment = { ...newAppointmentData, id: mockId };
-                setPendingAppointments(prev => [...prev, newMockAppointment].sort((a,b) => new Date(`${a.preferredDate}T${a.timeSlot || '00:00'}`).getTime() - new Date(`${b.preferredDate}T${b.timeSlot || '00:00'}`).getTime()));
-                setMessage({ type: 'success', text: 'Appointment request recorded (demo).' });
-            }
-        } catch (error) {
-            console.error("Error submitting appointment: ", error);
-            setMessage({ type: 'error', text: 'Error sending request.' });
-        } finally {
+        // Simulate API delay
+        setTimeout(() => {
+            setPendingAppointments(prev => [...prev, apptData].sort((a,b) => 
+                new Date(`${a.preferredDate}T00:00`).getTime() - new Date(`${b.preferredDate}T00:00`).getTime()
+            ));
+            setMessage({ type: 'success', text: 'Appointment scheduled successfully!' });
+            
+            // Reset form
+            setAppointmentType(mockAppointmentTypes[0].value as string);
+            setHealthcareProvider(mockDoctors[0].id);
+            setPreferredDate(''); 
+            setSelectedTimeSlot('');
             setIsLoading(false);
-        }
+            
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        }, 1000);
     };
-    
+
     if (!isAuthReady) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gray-50">
+            <div className="fixed inset-0 flex justify-center items-center bg-gray-50">
                 <div className="text-center">
-                     <p className="text-lg font-medium text-gray-700">Initializing Authentication...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+                    <p className="text-lg text-gray-600">Initializing CareConnect...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        // JSX structure remains the same as before
-        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-            <header className="mb-8">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-                    Appointment Management
-                </h1>
-                {userId && <p className="text-xs text-gray-500 mt-1">UserID: {userId} (AppID: {appId})</p>}
-            </header>
-
-            {message.text && (
-                <div className={`p-3 mb-6 rounded-md text-sm text-white ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
-                    {message.text}
+        <div className="fixed inset-0 flex bg-gray-50 overflow-hidden">
+            {/* Sidebar */}
+            <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+                <div className="flex items-center justify-center h-16 bg-white border-b border-gray-200">
+                    <div className="flex items-center space-x-2">
+                        <Heart className="h-8 w-8 text-teal-600" />
+                        <span className="text-xl font-semibold text-gray-800">CareConnect</span>
+                    </div>
                 </div>
-            )}
-
-            <div className="mb-10 bg-white shadow-lg rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4">Upcoming Appointments</h2>
-                {pendingAppointments.length > 0 ? (
-                    <ul className="space-y-4">
-                        {pendingAppointments.map((appt) => (
-                            <li key={appt.id} className="p-4 border border-gray-200 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                                <div>
-                                    <p className="font-semibold text-blue-600">{appt.appointmentTypeName || appt.symptoms} with {appt.doctorName}</p>
-                                    <p className="text-sm text-gray-600">Date: {new Date(appt.preferredDate).toLocaleDateString('en-US', { timeZone: 'UTC' })} - Time: {appt.timeSlot}</p>
-                                    <p className="text-xs text-gray-500">Patient: {appt.patientName} (Age: {appt.patientAge}) - Priority: {(priorityLevels.find(p=>p.value === appt.priority) as SelectOption)?.label || 'N/A'}</p>
-                                </div>
-                                <button
-                                    onClick={() => handleCancelAppointment(appt.id)}
-                                    disabled={isLoading}
-                                    className="mt-2 sm:mt-0 sm:ml-4 px-4 py-2 text-sm font-medium text-red-600 border border-red-300 rounded-md hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                                >
-                                    Cancel
-                                </button>
+                
+                <nav className="mt-8 px-4">
+                    <ul className="space-y-2">
+                        {sidebarItems.map((item, index) => (
+                            <li key={index}>
+                                <a href="#" className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                                    item.active 
+                                        ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-700' 
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                }`}>
+                                    <item.icon className={`mr-3 h-5 w-5 ${item.active ? 'text-blue-700' : 'text-gray-400'}`} />
+                                    {item.label}
+                                </a>
                             </li>
                         ))}
                     </ul>
-                ) : (
-                    <p className="text-gray-500">No upcoming appointments.</p>
-                )}
+                </nav>
+                
+                <div className="absolute bottom-4 left-4 right-4">
+                    <a href="#" className="flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <LogOut className="mr-3 h-5 w-5" />
+                        Sign Out
+                    </a>
+                </div>
             </div>
 
-            <div className="bg-white shadow-lg rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-gray-700 mb-6">Schedule New Appointment</h2>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <fieldset className="border border-gray-200 p-4 rounded-md">
-                        <legend className="text-md font-semibold text-gray-600 px-2">Patient Information (for priority assessment)</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                            <div>
-                                <label htmlFor="patientName" className="block text-sm font-medium text-gray-700">Full Name</label>
-                                <input type="text" id="patientName" value={patientName} onChange={(e) => setPatientName(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
-                            </div>
-                            <div>
-                                <label htmlFor="patientAge" className="block text-sm font-medium text-gray-700">Age</label>
-                                <input type="number" id="patientAge" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} required min="0" className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col min-w-0">
+                {/* Header */}
+                <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
+                    <div className="flex items-center justify-between px-6 py-4">
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                            >
+                                <Menu className="h-6 w-6" />
+                            </button>
+                            <h1 className="ml-4 lg:ml-0 text-2xl font-semibold text-gray-900">Dashboard</h1>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4">
+                            <button className="relative p-2 text-gray-400 hover:text-gray-500">
+                                <Bell className="h-6 w-6" />
+                                <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-400"></span>
+                            </button>
+                            <button className="p-2 text-gray-400 hover:text-gray-500">
+                                <Settings className="h-6 w-6" />
+                            </button>
+                            <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
+                                    <User className="h-5 w-5 text-white" />
+                                </div>
+                                <span className="hidden sm:block text-sm font-medium text-gray-700">User</span>
                             </div>
                         </div>
-                        <div className="mt-4">
-                            <label htmlFor="symptoms" className="block text-sm font-medium text-gray-700">Symptoms/Reason for Visit</label>
-                            <textarea id="symptoms" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} rows={2} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
-                        </div>
-                        <div className="mt-4">
-                            <label htmlFor="priority" className="block text-sm font-medium text-gray-700">Priority Level</label>
-                            <select id="priority" value={priority} onChange={(e) => setPriority(parseInt(e.target.value, 10))} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
-                                {priorityLevels.map(level => <option key={level.value} value={level.value}>{level.label}</option>)}
-                            </select>
-                        </div>
-                    </fieldset>
-                    
-                    <fieldset className="border border-gray-200 p-4 rounded-md">
-                         <legend className="text-md font-semibold text-gray-600 px-2">Appointment Details</legend>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-2">
-                            <div>
-                                <label htmlFor="appointmentType" className="block text-sm font-medium text-gray-700">Appointment Type</label>
-                                <select id="appointmentType" value={appointmentType} onChange={(e) => setAppointmentType(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
-                                    {mockAppointmentTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label htmlFor="healthcareProvider" className="block text-sm font-medium text-gray-700">Healthcare Provider</label>
-                                <select id="healthcareProvider" value={healthcareProvider} onChange={(e) => setHealthcareProvider(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
-                                    <option value="">-- Select Provider --</option>
-                                    {mockDoctors.map(doc => <option key={doc.id} value={doc.id}>{doc.name}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700">Date</label>
-                                <input type="date" id="preferredDate" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} min={new Date().toISOString().split('T')[0]} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/>
-                            </div>
-                            <div>
-                                <label htmlFor="selectedTimeSlot" className="block text-sm font-medium text-gray-700">Time</label>
-                                <select id="selectedTimeSlot" value={selectedTimeSlot} onChange={(e) => setSelectedTimeSlot(e.target.value)} required disabled={!healthcareProvider || availableTimeSlots.length === 0} className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white disabled:bg-gray-100">
-                                    <option value="">-- Select Time --</option>
-                                    {availableTimeSlots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
-                                </select>
-                                {healthcareProvider && availableTimeSlots.length === 0 && <p className="mt-1 text-xs text-red-600">Provider has no available slots on the selected date or no schedule.</p>}
-                            </div>
-                        </div>
-                    </fieldset>
-                    
-                    <div className="pt-2 text-right">
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="px-6 py-2.5 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-60"
-                        >
-                            {isLoading ? 'Processing...' : 'Schedule Appointment'}
-                        </button>
                     </div>
-                </form>
+                </header>
+
+                {/* Page Content */}
+                <main className="flex-1 overflow-y-auto">
+                    <div className="p-6 h-full">
+                        {message.text && (
+                            <div className={`mb-6 p-4 rounded-lg ${
+                                message.type === 'success' 
+                                    ? 'bg-green-50 border border-green-200 text-green-800' 
+                                    : 'bg-red-50 border border-red-200 text-red-800'
+                            }`}>
+                                {message.text}
+                            </div>
+                        )}
+
+                        <div className="max-w-7xl mx-auto">
+                            {/* Page Header */}
+                            <div className="mb-8">
+                                <h2 className="text-3xl font-bold text-gray-900">Appointment Management</h2>
+                                <p className="mt-2 text-gray-600">Schedule and manage your healthcare appointments</p>
+                            </div>
+
+                            {/* Upcoming Appointments */}
+                            <div className="mb-8 bg-white rounded-lg shadow-sm border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-900">Upcoming Appointments</h3>
+                                </div>
+                                <div className="p-6">
+                                    {pendingAppointments.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {pendingAppointments.map((appt, index) => (
+                                                <div key={appt.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                                    <div className="flex-1">
+                                                        <h4 className="font-semibold text-gray-900">{appt.doctorName}</h4>
+                                                        <p className="text-sm text-gray-600 mt-1">
+                                                            {new Date(appt.preferredDate).toLocaleDateString('en-US', { 
+                                                                month: 'long', 
+                                                                day: 'numeric', 
+                                                                year: 'numeric', 
+                                                                timeZone: 'UTC' 
+                                                            })} at {appt.timeSlot}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center space-x-3">
+                                                        <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                                            Reschedule
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCancelAppointment(appt.id)}
+                                                            disabled={isLoading}
+                                                            className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-500 text-center py-8">No upcoming appointments.</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Schedule New Appointment */}
+                            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-900">Schedule New Appointment</h3>
+                                </div>
+                                <div className="p-6">
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            <div>
+                                                <label htmlFor="appointmentType" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Appointment Type
+                                                </label>
+                                                <select 
+                                                    id="appointmentType" 
+                                                    value={appointmentType} 
+                                                    onChange={(e) => setAppointmentType(e.target.value)} 
+                                                    required 
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                                                >
+                                                    {mockAppointmentTypes.map(type => (
+                                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="healthcareProvider" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Healthcare Provider
+                                                </label>
+                                                <select 
+                                                    id="healthcareProvider" 
+                                                    value={healthcareProvider} 
+                                                    onChange={(e) => setHealthcareProvider(e.target.value)} 
+                                                    required 
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                                                >
+                                                    {mockDoctors.map(doc => (
+                                                        <option key={doc.id} value={doc.id}>{doc.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Date
+                                                </label>
+                                                <div className="relative">
+                                                    <input 
+                                                        type="date" 
+                                                        id="preferredDate" 
+                                                        value={preferredDate} 
+                                                        onChange={(e) => setPreferredDate(e.target.value)} 
+                                                        min={new Date().toISOString().split('T')[0]} 
+                                                        required 
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                                                        placeholder="mm/dd/yyyy"
+                                                    />
+                                                    <Calendar className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="selectedTimeSlot" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Time
+                                                </label>
+                                                <div className="relative">
+                                                    <select 
+                                                        id="selectedTimeSlot" 
+                                                        value={selectedTimeSlot} 
+                                                        onChange={(e) => setSelectedTimeSlot(e.target.value)} 
+                                                        required 
+                                                        disabled={!healthcareProvider || availableTimeSlots.length === 0}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <option value="" disabled>--:-- --</option>
+                                                        {availableTimeSlots.map(slot => (
+                                                            <option key={slot} value={slot}>{slot}</option>
+                                                        ))}
+                                                    </select>
+                                                    <Clock className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+                                                </div>
+                                                {healthcareProvider && availableTimeSlots.length === 0 && (
+                                                    <p className="mt-1 text-xs text-red-500">No time slots available for this provider.</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4">
+                                            <button
+                                                onClick={(e) => handleSubmit(e as any)}
+                                                disabled={isLoading}
+                                                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {isLoading ? (
+                                                    <>
+                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                        Scheduling...
+                                                    </>
+                                                ) : (
+                                                    'Schedule Appointment'
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
             </div>
+
+            {/* Sidebar Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden" 
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
         </div>
     );
 }
 
-export default AppointmentForm;
+export default CareConnectDashboard;
