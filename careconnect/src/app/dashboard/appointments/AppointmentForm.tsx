@@ -6,7 +6,7 @@ import React, { useState, useEffect, FormEvent, JSX } from 'react';
 import { 
   Heart, 
   BarChart3, 
-  Activity, 
+  Activity,
   Calendar, 
   FileText, 
   MessageSquare, 
@@ -78,9 +78,8 @@ const priorityLevels: SelectOption[] = [
 ];
 
 const sidebarItems = [
-  { icon: BarChart3, label: 'Dashboard', active: true },
+  { icon: BarChart3, label: 'Dashboard', active: true, href: "/dashboard"},
   { icon: Activity, label: 'Health Metrics' },
-  { icon: Activity, label: 'Activity' },
   { icon: Calendar, label: 'Appointments' },
   { icon: FileText, label: 'Reports' },
   { icon: MessageSquare, label: 'Messages' },
@@ -296,6 +295,7 @@ function CareConnectDashboard(): JSX.Element {
                 </header>
 
                 {/* Page Content */}
+
                 <main className="flex-1 overflow-y-auto">
                     <div className="p-6 h-full">
                         {message.text && (
