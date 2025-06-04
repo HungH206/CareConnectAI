@@ -1,45 +1,43 @@
 // src/lib/firebaseConfig.ts
+
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore'; // Sửa _from thành from
+import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 
-// ĐÂY LÀ NƠI BẠN ĐIỀN THÔNG TIN CẤU HÌNH FIREBASE CỦA MÌNH
-// BẠN CÓ THỂ LẤY THÔNG TIN NÀY TỪ FIREBASE CONSOLE
-// (Project settings -> General -> Your apps -> Firebase SDK snippet -> Config)
-// Khuyến nghị: Sử dụng biến môi trường cho các thông tin nhạy cảm này
+// Firebase credentials (safely pulled from environment variables or fallback to default)
 const firebaseCredentials = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "YOUR_API_KEY", // Thay YOUR_API_KEY
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN", // Thay YOUR_AUTH_DOMAIN
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID", // Thay YOUR_PROJECT_ID
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET", // Thay YOUR_STORAGE_BUCKET
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID", // Thay YOUR_MESSAGING_SENDER_ID
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "YOUR_APP_ID" // Thay YOUR_APP_ID
-  // measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID // (Tùy chọn)
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDTh5Qh_hnM5iYAXdEbWH5x_IQ-2ygrRgo",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "careconnect-fbe1b.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "careconnect-fbe1b",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "careconnect-fbe1b.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "666977299527",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:666977299527:web:cc3a409eb846608b4d9562",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-6ZBMZFH5ME"
 };
 
 let app: FirebaseApp;
-let db: Firestore | null = null; // Khởi tạo là null
-let auth: Auth | null = null;   // Khởi tạo là null
+let db: Firestore | null = null;
+let auth: Auth | null = null;
 let firebaseConfigAvailable = false;
 
-// Kiểm tra xem các thông tin credentials cần thiết có tồn tại không
-if (firebaseCredentials.apiKey && firebaseCredentials.apiKey !== "YOUR_API_KEY" &&
-    firebaseCredentials.projectId && firebaseCredentials.projectId !== "YOUR_PROJECT_ID") {
-    if (!getApps().length) {
-      app = initializeApp(firebaseCredentials);
-    } else {
-      app = getApp(); // Lấy app đã được khởi tạo nếu có
-    }
-    db = getFirestore(app);
-    auth = getAuth(app);
-    firebaseConfigAvailable = true;
-    console.log("Firebase initialized successfully from firebaseConfig.ts");
+// Check for required credentials before initializing Firebase
+if (firebaseCredentials.apiKey && firebaseCredentials.projectId) {
+  if (!getApps().length) {
+    app = initializeApp(firebaseCredentials);
+  } else {
+    app = getApp();
+  }
+
+  db = getFirestore(app);
+  auth = getAuth(app);
+  firebaseConfigAvailable = true;
+
+  console.log("✅ Firebase initialized with project ID:", firebaseCredentials.projectId);
 } else {
-    console.warn("Firebase configuration is missing or incomplete in firebaseConfig.ts. Please update it with your project credentials. Using mock data or limited functionality.");
-    // Bạn có thể gán các đối tượng mock ở đây nếu muốn có fallback rõ ràng hơn
-    // app = {} as FirebaseApp; // Gán mock nếu cần
-    // db = {} as Firestore;
-    // auth = {} as Auth;
+  console.warn(
+    "⚠️ Firebase configuration is missing or incomplete in firebaseConfig.ts. " +
+    "Please provide valid credentials via environment variables or directly in this file."
+  );
 }
 
 export { app, db, auth, firebaseConfigAvailable, firebaseCredentials };
