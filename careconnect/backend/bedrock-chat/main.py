@@ -1,6 +1,14 @@
-from handler import chat_with_claude
+# main.py
+from handler import generate_conversation
 
 if __name__ == "__main__":
     user_input = "Explain hypertension in simple terms"
-    result = chat_with_claude(user_input)
-    print("Bot:", result)
+    messages = [{
+        "role": "user",
+        "content": [{"text": user_input}]
+    }]
+    result = generate_conversation(messages)
+    print(result)
+
+
+    # Model Response and User Questions, Still work on Retieval and Training.
