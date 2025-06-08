@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
+  Activity,
   Calendar,
   FileText,
   MessageSquare,
@@ -26,7 +27,7 @@ export default function DashboardSidebar() {
 
   const menuItems = [
     { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
-    { icon: Heart, label: "Health Metrics", href: "/dashboard/health" },
+    { icon: Activity, label: "Health Metrics", href: "/dashboard/health" },
     { icon: Calendar, label: "Appointments", href: "/dashboard/appointments" },
     { icon: FileText, label: "Reports", href: "/dashboard/reports" },
     { icon: MessageSquare, label: "Messages", href: "/dashboard/messages" },
@@ -55,19 +56,18 @@ export default function DashboardSidebar() {
                 </Button>
               </div>
 
-              <nav className="space-y-1">
+              <nav className="space-y-2">
                 {menuItems.map((item) => {
                   const isActive = pathname === item.href
                   return (
                     <Link
                       key={item.label}
                       href={item.href}
-                      className={`flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition-colors relative ${
-                        isActive ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                      className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                        isActive ? "text-teal-600 bg-teal-50" : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                       }`}
                       onClick={() => setMobileOpen(false)}
                     >
-                      {isActive && <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l-md" />}
                       <item.icon className="h-5 w-5" />
                       <span>{item.label}</span>
                     </Link>
@@ -89,27 +89,26 @@ export default function DashboardSidebar() {
   }
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
+    <div className="fixed left-0 top-0 z-30 w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
       {/* Logo Header */}
       <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200">
         <Heart className="h-6 w-6 text-teal-600" />
         <span className="text-xl font-bold text-gray-900">CareConnect</span>
       </div>
 
-      <div className="flex-1 py-6">
-        <nav className="px-3 space-y-1">
+      <div className="flex-1 py-6 overflow-y-auto">
+        <nav className="px-4 space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.href
             return (
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-colors relative group ${
-                  isActive ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                  isActive ? "text-teal-600 bg-teal-50" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
-                {isActive && <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l-md" />}
-                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-teal-600" : "text-gray-500"}`} />
                 <span>{item.label}</span>
               </Link>
             )
@@ -117,8 +116,8 @@ export default function DashboardSidebar() {
         </nav>
       </div>
 
-      <div className="border-t border-gray-200 p-3">
-        <button className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full">
+      <div className="border-t border-gray-200 p-4">
+        <button className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors w-full">
           <LogOut className="h-5 w-5 flex-shrink-0" />
           <span>Sign Out</span>
         </button>
