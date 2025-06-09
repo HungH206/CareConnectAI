@@ -111,7 +111,7 @@ const sidebarItems = [
     { icon: Activity, label: 'Health Metrics' },
     { icon: Calendar, label: 'Appointments', active: true},
     { icon: FileText, label: 'Reports' },
-    { icon: MessageSquare, label: 'Messages' },
+    { icon: MessageSquare, label: 'Messages', active: true, href: "/dashboard/messages" },
     { icon: Users, label: 'Care Team' },
     { icon: Settings, label: 'Settings' },
     { icon: HelpCircle, label: 'Help & Support' },
