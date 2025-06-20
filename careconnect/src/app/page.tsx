@@ -248,7 +248,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-bold">Connect</h3>
                   <p className="text-center text-gray-500">
-                    Pair your wearable devices and health sensors with the CareConnect app.
+                    Connect with your healthcare provider using your smartphone. No wearables required.
                   </p>
                 </div>
                 <div className="flex flex-col items-center space-y-2 border rounded-lg p-6 bg-white shadow-sm">
@@ -264,9 +264,9 @@ export default function Home() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-900">
                     3
                   </div>
-                  <h3 className="text-xl font-bold">Understand</h3>
+                  <h3 className="text-xl font-bold">Connect with Care Team</h3>
                   <p className="text-center text-gray-500">
-                    Receive simplified explanations and guidance in your preferred language.
+                    Receive simplified explanations and guidance from doctors anytime, anywhere.
                   </p>
                 </div>
               </div>

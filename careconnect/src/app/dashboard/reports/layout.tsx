@@ -23,7 +23,7 @@ import {
 // Sidebar items from your new screenshot
 const sidebarItems = [
     { icon: BarChart3, label: 'Dashboard', href: "/dashboard" },
-    { icon: Activity, label: 'Health Metrics', href: "/dashboard/vitals" },
+    { icon: Activity, label: 'Health Metrics', href: "/dashboard/health" },
     { icon: CalendarDays, label: 'Appointments', href: "/dashboard/appointments" },
     { icon: FileText, label: 'Reports', href: "/dashboard/reports" },
     { icon: MessageSquare, label: 'Messages', href: "/dashboard/messages" },

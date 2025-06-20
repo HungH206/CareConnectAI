@@ -108,10 +108,10 @@ const priorityLevels: SelectOption[] = [
 
 const sidebarItems = [
     { icon: BarChart3, label: 'Dashboard', active: false, href: "/dashboard"},
-    { icon: Activity, label: 'Health Metrics' },
+    { icon: Activity, label: 'Health Metrics', href: "/dashboard/health" },
     { icon: Calendar, label: 'Appointments', active: true},
-    { icon: FileText, label: 'Reports' },
-    { icon: MessageSquare, label: 'Messages', active: true, href: "/dashboard/messages" },
+    { icon: FileText, label: 'Reports', href: "/dashboard/reports" },
+    { icon: MessageSquare, label: 'Messages', href: "/dashboard/messages" },
     { icon: Users, label: 'Care Team' },
     { icon: Settings, label: 'Settings' },
     { icon: HelpCircle, label: 'Help & Support' },
