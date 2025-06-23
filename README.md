@@ -1,4 +1,5 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## This project is stored in the 'careconnect' folder. Type 'cd careconnect' then npm run dev to run the latest update of the CareConnect App. Thank You!
 
 ## Getting Started
 
