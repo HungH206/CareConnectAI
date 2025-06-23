@@ -27,7 +27,7 @@ const sidebarItems = [
     { icon: CalendarDays, label: 'Appointments', href: "/dashboard/appointments" },
     { icon: FileText, label: 'Reports', href: "/dashboard/reports" },
     { icon: MessageSquare, label: 'Messages', href: "/dashboard/messages" },
-    { icon: Users, label: 'Care Team', href: "/dashboard/team" },
+    { icon: Users, label: 'Care Team', href: "/dashboard/care-team" },
     { icon: Settings, label: 'Settings', href: "/dashboard/settings" },
     { icon: HelpCircle, label: 'Help & Support', href: "/dashboard/help" },
 ];

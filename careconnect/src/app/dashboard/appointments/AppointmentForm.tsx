@@ -112,9 +112,9 @@ const sidebarItems = [
     { icon: Calendar, label: 'Appointments', active: true},
     { icon: FileText, label: 'Reports', href: "/dashboard/reports" },
     { icon: MessageSquare, label: 'Messages', href: "/dashboard/messages" },
-    { icon: Users, label: 'Care Team' },
-    { icon: Settings, label: 'Settings' },
-    { icon: HelpCircle, label: 'Help & Support' },
+    { icon: Users, label: 'Care Team',href: "/dashboard/care-team"  },
+    { icon: Settings, label: 'Settings', href: "/dashboard/settings" },
+    { icon: HelpCircle, label: 'Help & Support', href: "/dashboard/help" },
 ];
 
 // Helper function to parse date and time string into a Date object for reliable sorting

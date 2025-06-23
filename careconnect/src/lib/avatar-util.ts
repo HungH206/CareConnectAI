@@ -3,32 +3,38 @@
 export const defaultAvatars = {
   doctors: ["/avatars/DrSarah.png", "/avatars/PhilD.png", "/avatars/EmmaDavis.png"],
   nurses: ["/avatars/nurse-1.jpg", "/avatars/nurse-2.jpg"],
-  patients: ["/avatars/patient-default.jpg"],
+  patients: ["/avatars/patient-default.png"],
 }
 
-export const generateAvatarUrl = (name: string, role = "patient") => {
+export const getLocalAvatar = (name: string, role = "patient") => {
   // Generate a consistent avatar based on name hash
   const hash = name.split("").reduce((a, b) => {
     a = (a << 5) - a + b.charCodeAt(0)
     return a & a
   }, 0)
 
-  const avatarSets = {
-    doctor: defaultAvatars.doctors,
-    nurse: defaultAvatars.nurses,
-    patient: defaultAvatars.patients,
-  }
-
   const roleKey = role.toLowerCase().includes("doctor")
-    ? "doctor"
+    ? "doctors"
     : role.toLowerCase().includes("nurse")
-      ? "nurse"
-      : "patient"
+      ? "nurses"
+      : "patients"
 
-  const avatars = avatarSets[roleKey] || avatarSets.patient
+  const avatars: string[] = (defaultAvatars as Record<string, string[]>)[roleKey] || defaultAvatars.patients
   const index = Math.abs(hash) % avatars.length
 
   return avatars[index]
+}
+
+// Assign specific avatars to specific people
+export const getAssignedAvatar = (name: string, role: string) => {
+  const assignments = {
+    "Dr. Sarah Smith": "/avatars/DrSarah.png",
+    "Dr. Phil Deckerson": "/avatars/PhilD.png",
+    "Emma Davis": "/avatars/EmmaDavis.png",
+    "Tom Johnson": "/avatars/patient-default.png",
+  }
+
+  return assignments[name as keyof typeof assignments] || getLocalAvatar(name, role)
 }
 
 export const uploadAvatar = async (file: File): Promise<string> => {
@@ -37,7 +43,7 @@ export const uploadAvatar = async (file: File): Promise<string> => {
   return URL.createObjectURL(file)
 }
 
-// Generate avatar using external services
+// Generate avatar using external services (fallback)
 export const generateExternalAvatar = (name: string, style = "avataaars") => {
   const encodedName = encodeURIComponent(name)
 
